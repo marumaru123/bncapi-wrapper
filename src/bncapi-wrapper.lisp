@@ -4,7 +4,7 @@
         :drakma
         :ironclad
         :cl-json)
-  (:export :order-book :trade-fee))
+  (:export :order-book :new-order :trade-fee))
 (in-package :bncapi-wrapper)
 
 (defparameter *endpoint-url*     "https://api.binance.com")
@@ -19,8 +19,13 @@
     (ironclad:hmac-digest hmac)))
 
 (defun get-timestamp ()
-  (multiple-value-bind (time1 ms1) (sb-unix::system-real-time-values)
-    (parse-integer (concatenate 'string (princ-to-string time1) (princ-to-string ms1)))))
+  (multiple-value-bind (time ms) (sb-unix::system-real-time-values)
+    (let* ((str-time (princ-to-string time))
+           (str-ms   (princ-to-string ms))
+           (len-ms   (length str-ms)))
+      (if (> 3 len-ms)
+        (parse-integer (concatenate 'string str-time (format nil "~V@{~A~:*~}" (- 3 len-ms) "0") str-ms))
+        (parse-integer (concatenate 'string str-time str-ms))))))
 
 (defun create-extra-headers (key)
   (list (cons "X-MBX-APIKEY" key)
@@ -70,11 +75,12 @@
   (let ((path (concatenate 'string "/api/v3/depth?symbol=" symbol)))
     (get-public-api path)))
 
-(defun new-order (key secret symbol side type quantity price)
-  (let ((timestamp    (get-timestamp))
-	(query-string (concatenate 'string "symbol=" symbol "&side=" side "&type=" type "&timeInForce=GTC&quantity=" quantity "&price=" price "&recvWindow=5000&timestamp=" (princ-to-string timestamp)))
-	(signature (hex (hmac_sha256 secret query-string)))
-	(body      (concatenate 'string query-string "&signature=" signature)))
+(defun new-order (key secret symbol side type quantity price &optional (timeInForce "GTC") (recvWindow 5000))
+  (let* ((timestamp    (get-timestamp))
+         (query-string (concatenate 'string "symbol=" symbol "&side=" side "&type=" type "&timeInForce=" timeInForce "&quantity=" (princ-to-string quantity) "&price=" (princ-to-string price) "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp)))
+	 (signature (hex (hmac_sha256 secret query-string)))
+	 (body      (concatenate 'string query-string "&signature=" signature)))
+    (print body)
     (post-private-api key "/api/v3/order" body)))
 
 (defun trade-fee (key secret)
