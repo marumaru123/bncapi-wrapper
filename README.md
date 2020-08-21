@@ -1,4 +1,4 @@
-# bfapi-wrapper
+# bncapi-wrapper
 
 binance api wrapper for Common Lisp
 
