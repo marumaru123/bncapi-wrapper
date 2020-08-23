@@ -4,10 +4,11 @@
         :drakma
         :ironclad
         :cl-json)
-  (:export :order-book :new-order :cancel-order :query-order :account-information :trade-fee))
+  (:export :order-book :new-order :cancel-order :query-order :account-information :account-trade-list :trade-fee))
 (in-package :bncapi-wrapper)
 
 (defparameter *endpoint-url*     "https://api.binance.com")
+;(defparameter *endpoint-url*     "https://testnet.binance.vision")
 (defparameter *api-content-type* "application/json")
 
 (defun hex (bytes)
@@ -117,6 +118,14 @@
 	 (signature (hex (hmac_sha256 secret query-string)))
 	 (parameter (concatenate 'string "?" query-string "&signature=" signature))
 	 (url       (concatenate 'string "/api/v3/account" parameter)))
+    (get-private-api key url)))
+
+(defun account-trade-list (key secret symbol from-id limit &optional (recvWindow 5000))
+  (let* ((timestamp    (get-timestamp))
+         (query-string (concatenate 'string "symbol=" symbol "&fromId=" (princ-to-string from-id) "&limit=" (princ-to-string limit) "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp)))
+	 (signature (hex (hmac_sha256 secret query-string)))
+	 (parameter (concatenate 'string "?" query-string "&signature=" signature))
+	 (url       (concatenate 'string "/api/v3/myTrades" parameter)))
     (get-private-api key url)))
 
 (defun trade-fee (key secret)
