@@ -7,8 +7,8 @@
   (:export :order-book :new-order :cancel-order :query-order :account-information :account-trade-list :trade-fee))
 (in-package :bncapi-wrapper)
 
-(defparameter *endpoint-url*     "https://api.binance.com")
-;(defparameter *endpoint-url*     "https://testnet.binance.vision")
+;(defparameter *endpoint-url*     "https://api.binance.com")
+(defparameter *endpoint-url*     "https://testnet.binance.vision")
 (defparameter *api-content-type* "application/json")
 
 (defun hex (bytes)
@@ -92,9 +92,15 @@
 
 (defun new-order (key secret symbol side type quantity price &optional (timeInForce "GTC") (recvWindow 5000))
   (let* ((timestamp    (get-timestamp))
-         (query-string (concatenate 'string "symbol=" symbol "&side=" side "&type=" type "&timeInForce=" timeInForce "&quantity=" (princ-to-string quantity) "&price=" (princ-to-string price) "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp)))
+         (query-string1 (concatenate 'string "symbol=" symbol "&side=" side "&type=" type))
+	 (query-string2 (if (string= type "MARKET")
+			  (concatenate 'string "&quantity=" (princ-to-string quantity))
+			  (concatenate 'string "&timeInForce=" timeInForce "&quantity=" (princ-to-string quantity) "&price=" (princ-to-string price))))
+	 (query-string3 (concatenate 'string "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp)))
+	 (query-string (concatenate 'string query-string1 query-string2 query-string3))
 	 (signature (hex (hmac_sha256 secret query-string)))
 	 (body      (concatenate 'string query-string "&signature=" signature)))
+    (print query-string)
     (post-private-api key "/api/v3/order" body)))
 
 (defun cancel-order (key secret symbol order-id &optional (recvWindow 5000))
