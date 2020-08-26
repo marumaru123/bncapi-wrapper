@@ -4,11 +4,11 @@
         :drakma
         :ironclad
         :cl-json)
-  (:export :exchange-info :order-book :new-order :cancel-order :query-order :account-information :account-trade-list :trade-fee))
+  (:export :exchange-info :order-book :new-order :cancel-order :cancel-all-open-orders :query-order :account-information :account-trade-list :trade-fee))
 (in-package :bncapi-wrapper)
 
-;(defparameter *endpoint-url*     "https://api.binance.com")
-(defparameter *endpoint-url*     "https://testnet.binance.vision")
+(defparameter *endpoint-url*     "https://api.binance.com")
+;(defparameter *endpoint-url*     "https://testnet.binance.vision")
 (defparameter *api-content-type* "application/json")
 
 (defun hex (bytes)
@@ -112,6 +112,13 @@
 	 (signature (hex (hmac_sha256 secret query-string)))
 	 (body      (concatenate 'string query-string "&signature=" signature)))
     (delete-private-api key "/api/v3/order" body)))
+
+(defun cancel-all-open-orders (key secret symbol &optional (recvWindow 5000))
+  (let* ((timestamp    (get-timestamp))
+         (query-string (concatenate 'string "symbol=" symbol "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp)))
+	 (signature (hex (hmac_sha256 secret query-string)))
+	 (body      (concatenate 'string query-string "&signature=" signature)))
+    (delete-private-api key "/api/v3/openOrders" body)))
 
 (defun query-order (key secret symbol order-id &optional (recvWindow 5000))
   (let* ((timestamp    (get-timestamp))
