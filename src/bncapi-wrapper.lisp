@@ -4,7 +4,7 @@
         :drakma
         :ironclad
         :cl-json)
-  (:export :order-book :new-order :cancel-order :query-order :account-information :account-trade-list :trade-fee))
+  (:export :exchange-info :order-book :new-order :cancel-order :query-order :account-information :account-trade-list :trade-fee))
 (in-package :bncapi-wrapper)
 
 ;(defparameter *endpoint-url*     "https://api.binance.com")
@@ -86,6 +86,9 @@
                          :content             body
                          :additional-headers  extra-headers)))
 
+(defun exchange-info ()
+  (get-public-api "/api/v3/exchangeInfo"))
+
 (defun order-book (symbol)
   (let ((path (concatenate 'string "/api/v3/depth?symbol=" symbol)))
     (get-public-api path)))
@@ -126,9 +129,13 @@
 	 (url       (concatenate 'string "/api/v3/account" parameter)))
     (get-private-api key url)))
 
-(defun account-trade-list (key secret symbol from-id limit &optional (recvWindow 5000))
+(defun account-trade-list (key secret symbol &optional (from-id nil from-id-supplied-p) (limit nil limit-supplied-p)(recvWindow 5000))
   (let* ((timestamp    (get-timestamp))
-         (query-string (concatenate 'string "symbol=" symbol "&fromId=" (princ-to-string from-id) "&limit=" (princ-to-string limit) "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp)))
+         (query-string1 (concatenate 'string "symbol=" symbol))
+	 (from-id-qs (if from-id-supplied-p (concatenate 'string "&fromId=" (princ-to-string from-id)) ""))
+	 (limit-qs   (if from-id-supplied-p (concatenate 'string "&limit="  (princ-to-string limit)) ""))
+         (query-string3 (concatenate 'string "&recvWindow=" (princ-to-string recvWindow) "&timestamp=" (princ-to-string timestamp))) 
+         (query-string  (concatenate 'string query-string1 from-id-qs limit-qs query-string3))
 	 (signature (hex (hmac_sha256 secret query-string)))
 	 (parameter (concatenate 'string "?" query-string "&signature=" signature))
 	 (url       (concatenate 'string "/api/v3/myTrades" parameter)))
